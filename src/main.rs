@@ -49,10 +49,18 @@ async fn main() {
 
         println!("FPS: {}", fps);
 
-        let v: Vec<Particle> = Vec::new();
         // calculate
-        for particle in &mut particles {
-            particle.calculate(&v);
+        for i in 0..particles.len() {
+            let mut other_particles: Vec<Particle> = Vec::new();
+            for ii in 0..particles.len() {
+                if ii == i {
+                    continue;
+                }
+
+                other_particles.push(particles[ii]);
+            }
+
+            particles[i].calculate(other_particles);
         }
 
         // fun input

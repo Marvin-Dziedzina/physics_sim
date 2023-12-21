@@ -1,3 +1,6 @@
+use core::fmt;
+
+#[derive(Clone, Copy)]
 pub struct Components {
     pub magnitude: f64,
     pub x: f64,
@@ -9,6 +12,7 @@ impl Components {
     }
 }
 
+#[derive(Clone, Copy)]
 pub struct Vector2 {
     magnitude: f64,
     x: f64,
@@ -77,16 +81,32 @@ impl Vector2 {
         self.set_components(self.x + v.x, self.y + v.y);
     }
 
+    pub fn add_scalar(&mut self, s: f64) {
+        self.set_components(self.x + s, self.y + s);
+    }
+
     pub fn add_vector(&self, v: &Vector2) -> Vector2 {
         Vector2::from_components(self.x + v.x, self.y + v.y)
     }
 
+    pub fn add_scalar_vector(&self, s: f64) -> Vector2 {
+        Vector2::from_components(self.x + s, self.y + s)
+    }
+
     pub fn subtract(&mut self, v: &Vector2) {
-        self.set_components(v.x - self.x, v.y - self.y);
+        self.set_components(self.x - v.x, self.y - v.y);
+    }
+
+    pub fn subtract_scalar(&mut self, s: f64) {
+        self.set_components(self.x + s, self.y + s);
     }
 
     pub fn subtract_vector(&self, v: &Vector2) -> Vector2 {
-        Vector2::from_components(v.x - self.x, v.y - self.y)
+        Vector2::from_components(self.x - v.x, self.y - v.y)
+    }
+
+    pub fn subtract_scalar_vector(&self, s: f64) -> Vector2 {
+        Vector2::from_components(self.x + s, self.y + s)
     }
 
     pub fn multiply_scalar(&mut self, s: f64) {
@@ -105,20 +125,24 @@ impl Vector2 {
         Vector2::from_components(s * self.x, s * self.y)
     }
 
+    pub fn multiply_vector(&self, v: &Vector2) -> Vector2 {
+        Vector2::from_components(self.x * v.x, self.y * v.y)
+    }
+
     pub fn multiply_dot(&self, v: &Vector2) -> f64 {
         self.x * v.x + self.y * v.y
     }
 
+    pub fn angle(&self, v: &Vector2) -> f64 {
+        (Vector2::dot_product(self, v) / self.magnitude * v.magnitude).cos() * -1.
+    }
+
     pub fn dot(&self, v: &Vector2) -> f64 {
-        let v1 = [self.x, self.y];
-        let v2 = [v.x, v.y];
+        Vector2::dot_product(self, v)
+    }
 
-        let mut product: f64 = 0.;
-        for i in 0..2 {
-            product += v1[i] * v2[i];
-        }
-
-        product
+    fn dot_product(v1: &Vector2, v2: &Vector2) -> f64 {
+        v1.x * v2.x + v1.y * v2.y
     }
 
     pub fn normalized(&self) -> Vector2 {
@@ -144,5 +168,15 @@ impl Vector2 {
 
     fn update_magnitude(&mut self) {
         self.magnitude = Vector2::calculate_magnitude(self.x, self.y);
+    }
+}
+
+impl fmt::Display for Vector2 {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "x: {}; y: {}; magnitude: {};",
+            self.x, self.y, self.magnitude
+        )
     }
 }

@@ -1,5 +1,3 @@
-use std::ptr::eq;
-
 use macroquad::{miniquad::window::screen_size, prelude::*};
 
 use crate::vector::Vector2;
@@ -7,6 +5,7 @@ use crate::vector::Vector2;
 const GRAVITY: f64 = 9.8;
 const BOUNCYNESS: f64 = 0.20;
 
+#[derive(Copy, Clone)]
 pub struct Particle {
     pub position: Vector2,
     radius: u32,
@@ -25,7 +24,7 @@ impl Particle {
         }
     }
 
-    pub fn calculate(&mut self, particles: &Vec<Particle>) {
+    pub fn calculate(&mut self, particles: Vec<Particle>) {
         // movement
         self.gravity();
 
@@ -33,7 +32,7 @@ impl Particle {
         self.update_position();
 
         // check for rules
-        self.check_particle_collisions(particles);
+        self.check_particle_collisions(&particles);
         self.check_boundaries();
     }
 
@@ -75,16 +74,22 @@ impl Particle {
 
     fn check_particle_collisions(&mut self, particles: &Vec<Particle>) {
         for particle in particles {
-            if eq(particle, self) {
-                continue;
+            let distance_vector = particle.position.subtract_vector(&self.position);
+            let distance = distance_vector.get_magnitude();
+
+            if distance < (self.radius + particle.radius) as f64
+                && self.velocity.angle(&particle.position) < 0.
+            {
+                let offset = (self.radius + particle.radius) as f64 - distance;
+                let offset_vector = self.position.multiply_vector(&Vector2::from_components(
+                    (offset / (particle.position.get_x() - self.position.get_x())) / 100.,
+                    (offset / (particle.position.get_y() - self.position.get_y())) / 100.,
+                ));
+                self.position.set_components(
+                    self.position.get_x() + offset_vector.get_x(),
+                    self.position.get_y() + offset_vector.get_y(),
+                );
             }
-
-            let distance = particle
-                .position
-                .subtract_vector(&self.position)
-                .get_magnitude();
-
-            if distance < (self.radius + particle.radius) as f64 {}
         }
     }
 
