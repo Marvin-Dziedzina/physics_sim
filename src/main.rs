@@ -11,7 +11,7 @@ use vector::Vector2;
 mod particle;
 mod vector;
 
-const PARTICLE_COUNT: u32 = 30000;
+const PARTICLE_COUNT: u32 = 100;
 const RADIUS: u32 = 15;
 
 #[macroquad::main("Particles")]
