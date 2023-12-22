@@ -3,7 +3,6 @@ use std::time;
 
 use ::rand;
 use macroquad::miniquad::window;
-use macroquad::miniquad::EventHandler;
 use macroquad::prelude::*;
 use particle::Particle;
 use rand::Rng;
@@ -80,7 +79,7 @@ async fn main() {
 
             particles[i]
                 .velocity
-                .add(&Vector2::from_components(2., -10.));
+                .add(&Vector2::from_components(0., -10.));
         }
 
         // draw
