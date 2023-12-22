@@ -4,7 +4,7 @@ use crate::vector::Vector2;
 
 const GRAVITY: f64 = 9.8;
 const BOUNCYNESS: f64 = 0.20;
-const DRAG: f64 = 0.02;
+const DRAG: f64 = 0.025;
 
 #[derive(Copy, Clone)]
 pub struct Particle {
