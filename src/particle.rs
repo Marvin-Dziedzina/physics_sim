@@ -74,21 +74,22 @@ impl Particle {
 
     fn check_particle_collisions(&mut self, particles: &Vec<Particle>) {
         for particle in particles {
-            let distance_vector = particle.position.subtract_vector(&self.position);
+            let mut distance_vector = particle.position.subtract_vector(&self.position);
             let distance = distance_vector.get_magnitude();
 
-            if distance < (self.radius + particle.radius) as f64
-                && self.velocity.angle(&particle.position) < 0.
-            {
+            if distance < (self.radius + particle.radius) as f64 {
+                // stop me
                 let offset = (self.radius + particle.radius) as f64 - distance;
-                let offset_vector = self.position.multiply_vector(&Vector2::from_components(
-                    (offset / (particle.position.get_x() - self.position.get_x())) / 100.,
-                    (offset / (particle.position.get_y() - self.position.get_y())) / 100.,
-                ));
-                self.position.set_components(
-                    self.position.get_x() + offset_vector.get_x(),
-                    self.position.get_y() + offset_vector.get_y(),
-                );
+                // shorten the vector to the offset so the particle just gets out of the other particle
+                distance_vector.set_magnitude(offset);
+                // it should not stop so here we preserve the velocity that isnt dirctly directed toward the other particle
+                self.velocity.subtract(&distance_vector);
+                // we reverse it so it goes away and not into the other particle
+                distance_vector.multiply_scalar(-1.);
+                //self.position.add(&distance_vector);
+
+                // set own velocity
+                //self.velocity.add(&particle.velocity.multiply_scalar_vector(BOUNCYNESS))
             }
         }
     }
@@ -99,6 +100,30 @@ impl Particle {
             self.position.get_y() as f32,
             self.radius as f32,
             self.color,
+        );
+        self.draw_velocity();
+    }
+
+    #[cfg(debug_assertions)]
+    fn draw_velocity(&self) {
+        draw_line(
+            self.position.get_x() as f32,
+            self.position.get_y() as f32,
+            (self.position.get_x() + self.velocity.get_x()) as f32,
+            (self.position.get_y() + self.velocity.get_y()) as f32,
+            2.,
+            Color::from_rgba(255, 0, 0, 180),
+        )
+    }
+
+    fn draw_vector(&self, v: &Vector2) {
+        draw_line(
+            self.position.get_x() as f32,
+            self.position.get_y() as f32,
+            (v.get_x() + self.position.get_x()) as f32,
+            (v.get_y() + self.position.get_y()) as f32,
+            2.,
+            Color::from_rgba(0, 0, 255, 180),
         )
     }
 }

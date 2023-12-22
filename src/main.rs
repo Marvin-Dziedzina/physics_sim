@@ -3,8 +3,10 @@ use std::time;
 
 use ::rand;
 use macroquad::miniquad::window;
+use macroquad::miniquad::EventHandler;
 use macroquad::prelude::*;
 use particle::Particle;
+use rand::Rng;
 use vector::Vector2;
 
 mod particle;
@@ -72,6 +74,13 @@ async fn main() {
                 1.,
                 (255, 255, 255, 255),
             ))
+        } else if is_key_pressed(KeyCode::Space) {
+            let mut i = rand::thread_rng();
+            let i = i.gen_range(0..=particles.len() - 1);
+
+            particles[i]
+                .velocity
+                .add(&Vector2::from_components(2., -10.));
         }
 
         // draw

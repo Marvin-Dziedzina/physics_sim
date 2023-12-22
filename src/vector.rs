@@ -14,7 +14,6 @@ impl Components {
 
 #[derive(Clone, Copy)]
 pub struct Vector2 {
-    magnitude: f64,
     x: f64,
     y: f64,
 }
@@ -26,19 +25,11 @@ impl Vector2 {
 
     /// Create Vector from x and y values
     pub fn from_components(x: f64, y: f64) -> Vector2 {
-        Vector2 {
-            magnitude: Vector2::calculate_magnitude(x, y),
-            x,
-            y,
-        }
+        Vector2 { x, y }
     }
 
     fn from_zero() -> Vector2 {
-        Vector2 {
-            magnitude: 0.,
-            x: 0.,
-            y: 0.,
-        }
+        Vector2 { x: 0., y: 0. }
     }
 
     // Get component
@@ -50,12 +41,13 @@ impl Vector2 {
         self.y
     }
 
+    /// Calculates and returns magnitude
     pub fn get_magnitude(&self) -> f64 {
-        self.magnitude
+        Vector2::calculate_magnitude(self.get_x(), self.get_y())
     }
 
     /// return (x, y, magnitude)
-    pub fn get_components(&self) -> Components {
+    pub fn get_components(&mut self) -> Components {
         Components::new(self.get_x(), self.get_y(), self.get_magnitude())
     }
 
@@ -68,73 +60,86 @@ impl Vector2 {
     /// Magnitude gets calculated automatically
     pub fn set_x(&mut self, x: f64) {
         self.x = x;
-        self.update_magnitude();
     }
     /// Magnitude gets calculated automatically
     pub fn set_y(&mut self, y: f64) {
         self.y = y;
-        self.update_magnitude();
+    }
+
+    /// This shortens the vector but keeps the direction the same.
+    /// X and Y will be modified
+    pub fn set_magnitude(&mut self, s: f64) {
+        self.multiply_scalar(s / self.get_magnitude());
+    }
+
+    pub fn set_magnitude_vector(&self, s: f64) -> Vector2 {
+        self.multiply_scalar_vector(s / self.get_magnitude())
     }
 
     // Calculations
     pub fn add(&mut self, v: &Vector2) {
-        self.set_components(self.x + v.x, self.y + v.y);
+        self.set_components(self.get_x() + v.get_x(), self.get_y() + v.get_y());
     }
 
     pub fn add_scalar(&mut self, s: f64) {
-        self.set_components(self.x + s, self.y + s);
+        self.set_components(self.get_x() + s, self.get_y() + s);
     }
 
     pub fn add_vector(&self, v: &Vector2) -> Vector2 {
-        Vector2::from_components(self.x + v.x, self.y + v.y)
+        Vector2::from_components(self.get_x() + v.get_x(), self.get_y() + v.get_y())
     }
 
     pub fn add_scalar_vector(&self, s: f64) -> Vector2 {
-        Vector2::from_components(self.x + s, self.y + s)
+        Vector2::from_components(self.get_x() + s, self.get_y() + s)
     }
 
     pub fn subtract(&mut self, v: &Vector2) {
-        self.set_components(self.x - v.x, self.y - v.y);
+        self.set_components(self.get_x() - v.get_x(), self.get_y() - v.get_y());
     }
 
     pub fn subtract_scalar(&mut self, s: f64) {
-        self.set_components(self.x + s, self.y + s);
+        self.set_components(self.get_x() + s, self.get_y() + s);
+    }
+
+    pub fn multiply(&mut self, v: &Vector2) {
+        self.multiply_scalar_x(v.get_x());
+        self.multiply_scalar_y(v.get_y());
     }
 
     pub fn subtract_vector(&self, v: &Vector2) -> Vector2 {
-        Vector2::from_components(self.x - v.x, self.y - v.y)
+        Vector2::from_components(self.get_x() - v.get_x(), self.get_y() - v.get_y())
     }
 
     pub fn subtract_scalar_vector(&self, s: f64) -> Vector2 {
-        Vector2::from_components(self.x + s, self.y + s)
+        Vector2::from_components(self.get_x() + s, self.get_y() + s)
     }
 
     pub fn multiply_scalar(&mut self, s: f64) {
-        self.set_components(s * self.x, s * self.y)
+        self.set_components(self.get_x() * s, self.get_y() * s)
     }
 
     pub fn multiply_scalar_x(&mut self, s: f64) {
-        self.set_x(self.x * s);
+        self.set_x(self.get_x() * s);
     }
 
     pub fn multiply_scalar_y(&mut self, s: f64) {
-        self.set_y(self.y * s);
+        self.set_y(self.get_y() * s);
     }
 
     pub fn multiply_scalar_vector(&self, s: f64) -> Vector2 {
-        Vector2::from_components(s * self.x, s * self.y)
+        Vector2::from_components(self.get_x() * s, self.get_y() * s)
     }
 
     pub fn multiply_vector(&self, v: &Vector2) -> Vector2 {
-        Vector2::from_components(self.x * v.x, self.y * v.y)
+        Vector2::from_components(self.get_x() * v.get_x(), self.get_y() * v.get_y())
     }
 
     pub fn multiply_dot(&self, v: &Vector2) -> f64 {
-        self.x * v.x + self.y * v.y
+        self.get_x() * v.get_x() + self.get_y() * v.get_y()
     }
 
     pub fn angle(&self, v: &Vector2) -> f64 {
-        (Vector2::dot_product(self, v) / self.magnitude * v.magnitude).cos() * -1.
+        (Vector2::dot_product(self, v) / self.get_magnitude() * v.get_magnitude()).cos() * -1.
     }
 
     pub fn dot(&self, v: &Vector2) -> f64 {
@@ -142,7 +147,7 @@ impl Vector2 {
     }
 
     fn dot_product(v1: &Vector2, v2: &Vector2) -> f64 {
-        v1.x * v2.x + v1.y * v2.y
+        v1.get_x() * v2.get_x() + v1.get_y() * v2.get_y()
     }
 
     pub fn normalized(&self) -> Vector2 {
@@ -151,7 +156,7 @@ impl Vector2 {
 
     pub fn normalize(&mut self) {
         let v = Vector2::normalize_vector(&self);
-        self.set_components(v.x, v.y);
+        self.set_components(v.get_x(), v.get_y());
     }
 
     pub fn get_distance(&self, v: Vector2) -> f64 {
@@ -159,15 +164,11 @@ impl Vector2 {
     }
 
     fn normalize_vector(v: &Vector2) -> Vector2 {
-        Vector2::from_components(v.x / v.magnitude, v.y / v.magnitude)
+        Vector2::from_components(v.get_x() / v.get_magnitude(), v.get_y() / v.get_magnitude())
     }
 
     fn calculate_magnitude(x: f64, y: f64) -> f64 {
         (x.powf(2.) + y.powf(2.)).sqrt()
-    }
-
-    fn update_magnitude(&mut self) {
-        self.magnitude = Vector2::calculate_magnitude(self.x, self.y);
     }
 }
 
@@ -176,7 +177,9 @@ impl fmt::Display for Vector2 {
         write!(
             f,
             "x: {}; y: {}; magnitude: {};",
-            self.x, self.y, self.magnitude
+            self.x,
+            self.y,
+            self.get_magnitude(),
         )
     }
 }
