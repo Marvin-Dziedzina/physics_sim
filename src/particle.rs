@@ -28,6 +28,7 @@ impl Particle {
     pub fn calculate(&mut self, particles: Vec<Particle>) {
         // movement
         self.gravity();
+        self.drag();
 
         // update
         self.update_position();
@@ -46,6 +47,13 @@ impl Particle {
             0.,
             self.mass * GRAVITY * get_frame_time() as f64,
         ));
+    }
+
+    fn drag(&mut self) {
+        let mut drag_vector = self.velocity.multiply_scalar_vector(-1.);
+        drag_vector.set_magnitude(&self.velocity.get_magnitude() * self.mass * DRAG);
+
+        self.velocity.add(&drag_vector);
     }
 
     fn check_boundaries(&mut self) {
