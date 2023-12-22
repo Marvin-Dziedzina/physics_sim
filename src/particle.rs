@@ -9,7 +9,7 @@ const DRAG: f64 = 0.025;
 #[derive(Copy, Clone)]
 pub struct Particle {
     pub position: Vector2,
-    radius: u32,
+    pub radius: u32,
     mass: f64,
     pub velocity: Vector2,
     color: Color,
@@ -25,7 +25,7 @@ impl Particle {
         }
     }
 
-    pub fn calculate(&mut self, particles: Vec<Particle>) {
+    pub fn calculate(&mut self) {
         // movement
         self.gravity();
         self.drag();
@@ -34,7 +34,6 @@ impl Particle {
         self.update_position();
 
         // check for rules
-        self.check_particle_collisions(&particles);
         self.check_boundaries();
     }
 
@@ -81,30 +80,6 @@ impl Particle {
         }
     }
 
-    fn check_particle_collisions(&mut self, particles: &Vec<Particle>) {
-        for particle in particles {
-            let mut distance_vector = particle.position.subtract_vector(&self.position);
-            let distance = distance_vector.get_magnitude();
-
-            if distance < (self.radius + particle.radius) as f64 {
-                // stop me
-                let offset = (self.radius + particle.radius) as f64 - distance;
-                // shorten the vector to the offset so the particle just gets out of the other particle
-                distance_vector.set_magnitude(offset);
-                // it should not stop so here we preserve the velocity that isnt dirctly directed toward the other particle
-                self.velocity
-                    .subtract(&distance_vector.multiply_scalar_vector(BOUNCYNESS / 2.));
-                // we reverse it so it goes away and not into the other particle
-                distance_vector.multiply_scalar(-1.);
-                // set the particle to the outside
-                self.position.add(&distance_vector);
-                // velocity transfer
-                self.position
-                    .add(&particle.velocity.multiply_scalar_vector(1. - BOUNCYNESS));
-            }
-        }
-    }
-
     pub fn draw(&self) {
         draw_circle(
             self.position.get_x() as f32,
@@ -115,7 +90,6 @@ impl Particle {
         self.draw_velocity();
     }
 
-    #[cfg(debug_assertions)]
     fn draw_velocity(&self) {
         draw_line(
             self.position.get_x() as f32,

@@ -11,7 +11,7 @@ use vector::Vector2;
 mod particle;
 mod vector;
 
-const PARTICLE_COUNT: u32 = 1;
+const PARTICLE_COUNT: u32 = 30000;
 const RADIUS: u32 = 15;
 
 #[macroquad::main("Particles")]
@@ -52,27 +52,39 @@ async fn main() {
 
         // calculate
         for i in 0..particles.len() {
-            let mut other_particles: Vec<Particle> = Vec::new();
-            for ii in 0..particles.len() {
-                if ii == i {
-                    continue;
-                }
-
-                other_particles.push(particles[ii]);
-            }
-
-            particles[i].calculate(other_particles);
+            particles[i].calculate();
         }
 
         // fun input
         if is_mouse_button_pressed(MouseButton::Right) {
             let mouse_pos = mouse_position();
-            particles.push(Particle::new(
-                Vector2::from_components(mouse_pos.0 as f64, mouse_pos.1 as f64),
-                15,
-                1.,
-                (255, 255, 255, 255),
-            ))
+
+            let mut is_empty = true;
+            let mut particle_i = 1;
+            for i in 0..=particles.len() - 1 {
+                if (particles[i].position.get_x() - particles[i].radius as f64)
+                    <= mouse_pos.0 as f64
+                    && (particles[i].position.get_y() - particles[i].radius as f64)
+                        <= mouse_pos.1 as f64
+                    && (particles[i].position.get_x() + particles[i].radius as f64)
+                        >= mouse_pos.0 as f64
+                    && (particles[i].position.get_y() + particles[i].radius as f64)
+                        >= mouse_pos.1 as f64
+                {
+                    is_empty = false;
+                    particle_i = i;
+                }
+            }
+            if is_empty {
+                particles.push(Particle::new(
+                    Vector2::from_components(mouse_pos.0 as f64, mouse_pos.1 as f64),
+                    15,
+                    1.,
+                    (255, 255, 255, 255),
+                ))
+            } else {
+                particles.remove(particle_i);
+            }
         } else if is_key_pressed(KeyCode::Space) {
             let mut i = rand::thread_rng();
             let i = i.gen_range(0..=particles.len() - 1);
