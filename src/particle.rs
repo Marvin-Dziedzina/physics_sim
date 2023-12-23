@@ -12,7 +12,7 @@ const DRAG: f64 = 0.025;
 pub struct Particle {
     pub position: Vector2,
     pub radius: u32,
-    mass: f64,
+    pub mass: f64,
     pub velocity: Vector2,
     color: Color,
 }
@@ -108,7 +108,7 @@ impl Display for Particle {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "pos: {}; velocity: {}; radius: {}; mass: {}; color: [{}, {}, {}, {}];",
+            "pos: {} velocity: {} radius: {}; mass: {}; color: [{}, {}, {}, {}];",
             self.position,
             self.velocity,
             self.radius,
