@@ -5,20 +5,23 @@ use ::rand;
 use macroquad::miniquad::window;
 use macroquad::prelude::*;
 use particle::Particle;
-use rand::Rng;
 use vector::Vector2;
 
 mod particle;
 mod vector;
 
-const PARTICLE_COUNT: u32 = 100;
+const PARTICLE_COUNT: u32 = 200;
 const RADIUS: u32 = 15;
+const MASS: f64 = 1.;
+
+const REPULSIVENESS: f64 = 0.5;
+const REPULSE_RADIUS: u32 = 64;
 
 #[macroquad::main("Particles")]
 async fn main() {
     let screen_size = window::screen_size();
 
-    let mut particles: Vec<particle::Particle> = Vec::new();
+    let mut particles: Vec<Particle> = Vec::new();
     for _ in 0..PARTICLE_COUNT {
         let x =
             (rand::random::<f64>() * (screen_size.0 - (RADIUS * 2) as f32) as f64) + RADIUS as f64;
@@ -28,7 +31,7 @@ async fn main() {
         particles.push(Particle::new(
             Vector2::from_components(x, y),
             RADIUS,
-            1.0,
+            MASS,
             (255, 255, 255, 255),
         ));
     }
@@ -49,49 +52,51 @@ async fn main() {
         }
 
         println!("FPS: {}", fps);
-
+        
         // calculate
         for i in 0..particles.len() {
             particles[i].calculate();
         }
 
         // fun input
-        if is_mouse_button_pressed(MouseButton::Right) {
+        const MOUSE_RADIUS: f64 = 128.;
+        if is_mouse_button_down(MouseButton::Left) {
+            // slice
             let mouse_pos = mouse_position();
-
-            let mut is_empty = true;
-            let mut particle_i = 1;
-            for i in 0..=particles.len() - 1 {
-                if (particles[i].position.get_x() - particles[i].radius as f64)
-                    <= mouse_pos.0 as f64
-                    && (particles[i].position.get_y() - particles[i].radius as f64)
-                        <= mouse_pos.1 as f64
-                    && (particles[i].position.get_x() + particles[i].radius as f64)
-                        >= mouse_pos.0 as f64
-                    && (particles[i].position.get_y() + particles[i].radius as f64)
-                        >= mouse_pos.1 as f64
-                {
-                    is_empty = false;
-                    particle_i = i;
+            for i in 0..particles.len() {
+                let mut distance_vector =
+                    particles[i]
+                        .position
+                        .get_distance_vector(&Vector2::from_components(
+                            mouse_pos.0 as f64,
+                            mouse_pos.1 as f64,
+                        ));
+                let distance = distance_vector.get_magnitude();
+                if distance <= MOUSE_RADIUS {
+                    let strength = (MOUSE_RADIUS - distance) / MOUSE_RADIUS;
+                    distance_vector.set_magnitude(strength * 2.);
+                    particles[i].velocity.add(&distance_vector);
                 }
             }
-            if is_empty {
-                particles.push(Particle::new(
-                    Vector2::from_components(mouse_pos.0 as f64, mouse_pos.1 as f64),
-                    15,
-                    1.,
-                    (255, 255, 255, 255),
-                ))
-            } else {
-                particles.remove(particle_i);
+        } else if is_mouse_button_down(MouseButton::Right) {
+            // pull
+            let mouse_pos = mouse_position();
+            for i in 0..particles.len() {
+                let mut distance_vector =
+                    particles[i]
+                        .position
+                        .get_distance_vector(&Vector2::from_components(
+                            mouse_pos.0 as f64,
+                            mouse_pos.1 as f64,
+                        ));
+                let distance = distance_vector.get_magnitude();
+                if distance <= MOUSE_RADIUS {
+                    let strength = (MOUSE_RADIUS - distance) / MOUSE_RADIUS;
+                    distance_vector.reverse();
+                    distance_vector.set_magnitude(strength * 2.);
+                    particles[i].velocity.add(&distance_vector);
+                }
             }
-        } else if is_key_pressed(KeyCode::Space) {
-            let mut i = rand::thread_rng();
-            let i = i.gen_range(0..=particles.len() - 1);
-
-            particles[i]
-                .velocity
-                .add(&Vector2::from_components(0., -10.));
         }
 
         // draw
