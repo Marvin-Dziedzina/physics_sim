@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use macroquad::{miniquad::window::screen_size, prelude::*};
 
 use crate::vector::Vector2;
@@ -49,7 +51,7 @@ impl Particle {
     }
 
     fn drag(&mut self) {
-        let mut drag_vector = self.velocity.multiply_scalar_vector(-1.);
+        let mut drag_vector = self.velocity.reverse_vector();
         drag_vector.set_magnitude(&self.velocity.get_magnitude() * self.mass * DRAG);
 
         self.velocity.add(&drag_vector);
@@ -98,6 +100,23 @@ impl Particle {
             (self.position.get_y() + self.velocity.get_y()) as f32,
             2.,
             Color::from_rgba(255, 0, 0, 180),
+        )
+    }
+}
+
+impl Display for Particle {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "pos: {}; velocity: {}; radius: {}; mass: {}; color: [{}, {}, {}, {}];",
+            self.position,
+            self.velocity,
+            self.radius,
+            self.mass,
+            (self.color.r * 255.) as u8,
+            (self.color.g * 255.) as u8,
+            (self.color.b * 255.) as u8,
+            (self.color.a * 255.) as u8,
         )
     }
 }
