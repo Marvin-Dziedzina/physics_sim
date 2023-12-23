@@ -178,8 +178,16 @@ impl Vector2 {
         Vector2::from_components(v.get_x() / v.get_magnitude(), v.get_y() / v.get_magnitude())
     }
 
-    pub fn get_distance(&self, v: &Vector2) -> f64 {
-        self.subtract_vector(&v).get_magnitude()
+    pub fn get_distance_scalar(&self, v: &Vector2) -> f64 {
+        Vector2::get_distance(&self, v).get_magnitude()
+    }
+
+    pub fn get_distance_vector(&self, v: &Vector2) -> Vector2 {
+        Vector2::get_distance(&self, v)
+    }
+
+    fn get_distance(v1: &Vector2, v2: &Vector2) -> Vector2 {
+        v1.subtract_vector(v2)
     }
 
     pub fn reverse(&mut self) {
