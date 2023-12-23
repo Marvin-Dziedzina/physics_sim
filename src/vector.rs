@@ -14,6 +14,7 @@ impl Components {
 
 #[derive(Clone, Copy)]
 pub struct Vector2 {
+    magnitude: f64,
     x: f64,
     y: f64,
 }
@@ -25,11 +26,19 @@ impl Vector2 {
 
     /// Create Vector from x and y values
     pub fn from_components(x: f64, y: f64) -> Vector2 {
-        Vector2 { x, y }
+        Vector2 {
+            x,
+            y,
+            magnitude: Vector2::calculate_magnitude(x, y),
+        }
     }
 
     fn from_zero() -> Vector2 {
-        Vector2 { x: 0., y: 0. }
+        Vector2 {
+            x: 0.,
+            y: 0.,
+            magnitude: 0.,
+        }
     }
 
     // Get component
@@ -46,7 +55,6 @@ impl Vector2 {
         Vector2::calculate_magnitude(self.get_x(), self.get_y())
     }
 
-    /// return (x, y, magnitude)
     pub fn get_components(&mut self) -> Components {
         Components::new(self.get_x(), self.get_y(), self.get_magnitude())
     }
@@ -54,16 +62,17 @@ impl Vector2 {
     // Set component
     /// Magnitude gets calculated automatically
     pub fn set_components(&mut self, x: f64, y: f64) {
-        self.set_x(x);
-        self.set_y(y);
+        self.x = x;
+        self.y = y;
+        self.magnitude = Vector2::calculate_magnitude(x, y)
     }
     /// Magnitude gets calculated automatically
     pub fn set_x(&mut self, x: f64) {
-        self.x = x;
+        self.set_components(x, self.get_y());
     }
     /// Magnitude gets calculated automatically
     pub fn set_y(&mut self, y: f64) {
-        self.y = y;
+        self.set_components(self.get_x(), y);
     }
 
     /// This shortens the vector but keeps the direction the same.
@@ -101,17 +110,17 @@ impl Vector2 {
         self.set_components(self.get_x() + s, self.get_y() + s);
     }
 
-    pub fn multiply(&mut self, v: &Vector2) {
-        self.multiply_scalar_x(v.get_x());
-        self.multiply_scalar_y(v.get_y());
-    }
-
     pub fn subtract_vector(&self, v: &Vector2) -> Vector2 {
         Vector2::from_components(self.get_x() - v.get_x(), self.get_y() - v.get_y())
     }
 
     pub fn subtract_scalar_vector(&self, s: f64) -> Vector2 {
         Vector2::from_components(self.get_x() + s, self.get_y() + s)
+    }
+
+    pub fn multiply(&mut self, v: &Vector2) {
+        self.multiply_scalar_x(v.get_x());
+        self.multiply_scalar_y(v.get_y());
     }
 
     pub fn multiply_scalar(&mut self, s: f64) {
@@ -134,11 +143,12 @@ impl Vector2 {
         Vector2::from_components(self.get_x() * v.get_x(), self.get_y() * v.get_y())
     }
 
-    pub fn multiply_dot(&self, v: &Vector2) -> f64 {
-        self.get_x() * v.get_x() + self.get_y() * v.get_y()
-    }
-
+    /// Returns -1 if one of the magnitudes equals 0
     pub fn angle(&self, v: &Vector2) -> f64 {
+        if self.get_magnitude() == 0. || v.get_magnitude() == 0. {
+            return -1.;
+        }
+
         (Vector2::dot_product(self, v) / self.get_magnitude() * v.get_magnitude()).cos() * -1.
     }
 
@@ -150,25 +160,38 @@ impl Vector2 {
         v1.get_x() * v2.get_x() + v1.get_y() * v2.get_y()
     }
 
-    pub fn normalized(&self) -> Vector2 {
-        Vector2::normalize_vector(&self)
-    }
-
     pub fn normalize(&mut self) {
         let v = Vector2::normalize_vector(&self);
         self.set_components(v.get_x(), v.get_y());
     }
 
-    pub fn get_distance(&self, v: Vector2) -> f64 {
-        self.subtract_vector(&v).get_magnitude()
+    pub fn normalized(&self) -> Vector2 {
+        Vector2::normalize_vector(&self)
     }
 
+    /// If magnitude equals 0 a zero vector will be returned
     fn normalize_vector(v: &Vector2) -> Vector2 {
+        if v.get_magnitude() == 0. {
+            return Vector2::from_zero();
+        }
+
         Vector2::from_components(v.get_x() / v.get_magnitude(), v.get_y() / v.get_magnitude())
     }
 
+    pub fn get_distance(&self, v: &Vector2) -> f64 {
+        self.subtract_vector(&v).get_magnitude()
+    }
+
+    pub fn reverse(&mut self) {
+        self.multiply_scalar(-1.);
+    }
+
+    pub fn reverse_vector(&self) -> Vector2 {
+        self.multiply_scalar_vector(-1.)
+    }
+
     fn calculate_magnitude(x: f64, y: f64) -> f64 {
-        (x.powf(2.) + y.powf(2.)).sqrt()
+        (x.abs().powf(2.) + y.abs().powf(2.)).sqrt()
     }
 }
 
