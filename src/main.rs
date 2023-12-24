@@ -14,7 +14,7 @@ const PARTICLE_COUNT: u32 = 200;
 const RADIUS: u32 = 15;
 const MASS: f64 = 1.;
 
-const REPULSIVENESS: f64 = 2.;
+const REPULSIVENESS: f64 = 1.5;
 const REPULSE_RADIUS: u32 = 32;
 const ATTRACTION_RADIUS: u32 = 45;
 
