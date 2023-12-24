@@ -10,13 +10,18 @@ use vector::Vector2;
 mod particle;
 mod vector;
 
+const FPS: f64 = 25.;
+
 const PARTICLE_COUNT: u32 = 200;
-const RADIUS: u32 = 15;
+const RADIUS: u32 = 5;
 const MASS: f64 = 1.;
 
 const REPULSIVENESS: f64 = 1.5;
 const REPULSE_RADIUS: u32 = 32;
 const ATTRACTION_RADIUS: u32 = 45;
+
+const MOUSE_RADIUS: f64 = 128.;
+const MOUSE_STRENGTH: f64 = 18.;
 
 #[macroquad::main("Particles")]
 async fn main() {
@@ -41,43 +46,41 @@ async fn main() {
     let mut last_frame: time::Instant = time::Instant::now();
 
     loop {
-        let time_since_last_frame = time::Instant::now()
+        let delta_frame_time = time::Instant::now()
             .duration_since(last_frame)
-            .as_secs_f32();
-        let fps: f32 = 1. / time_since_last_frame;
+            .as_secs_f64();
+
         last_frame = time::Instant::now();
-
-        let sleep_until = time::Instant::now() + time::Duration::from_secs_f64(1. / 25.);
-        while time::Instant::now() < sleep_until {
-            thread::sleep(sleep_zero);
-        }
-
-        println!("FPS: {}", fps);
 
         // calculate
         for i in 0..particles.len() {
-            particles[i].calculate();
+            particles[i].calculate(&delta_frame_time);
 
             for ii in 0..particles.len() {
                 if i == ii {
                     continue;
                 }
 
-                let mut distance_vector = particles[ii]
+                let distance_vector = particles[ii]
                     .position
                     .get_distance_vector(&particles[i].position);
                 let distance = distance_vector.get_magnitude();
                 if distance as u32 <= REPULSE_RADIUS {
                     let strength = (REPULSE_RADIUS as f64 - distance) / REPULSE_RADIUS as f64;
-                    distance_vector.reverse();
-                    distance_vector.set_magnitude(strength * REPULSIVENESS * particles[i].mass);
-                    particles[i].velocity.add(&distance_vector);
+                    let mut repulse_vector = distance_vector.reverse_vector();
+                    repulse_vector.set_magnitude(
+                        strength * REPULSIVENESS * particles[i].mass * delta_frame_time,
+                    );
+                    particles[i].velocity.add(&repulse_vector);
+                }
+
+                if distance as u32 >= REPULSE_RADIUS && distance as u32 <= ATTRACTION_RADIUS {
+                    // inplement attraction force
                 }
             }
         }
 
         // fun input
-        const MOUSE_RADIUS: f64 = 128.;
         if is_mouse_button_down(MouseButton::Left) {
             // slice
             let mouse_pos = mouse_position();
@@ -92,7 +95,7 @@ async fn main() {
                 let distance = distance_vector.get_magnitude();
                 if distance <= MOUSE_RADIUS {
                     let strength = (MOUSE_RADIUS - distance) / MOUSE_RADIUS;
-                    distance_vector.set_magnitude(strength * 2.);
+                    distance_vector.set_magnitude(strength * MOUSE_STRENGTH * delta_frame_time);
                     particles[i].velocity.add(&distance_vector);
                 }
             }
@@ -111,7 +114,7 @@ async fn main() {
                 if distance <= MOUSE_RADIUS {
                     let strength = (MOUSE_RADIUS - distance) / MOUSE_RADIUS;
                     distance_vector.reverse();
-                    distance_vector.set_magnitude(strength * 2.);
+                    distance_vector.set_magnitude(strength * MOUSE_STRENGTH * delta_frame_time);
                     particles[i].velocity.add(&distance_vector);
                 }
             }
@@ -125,5 +128,18 @@ async fn main() {
         }
 
         next_frame().await;
+
+        let fps: f64 = 1. / delta_frame_time;
+        println!("FPS: {}", fps.round());
+
+        // let sleep_until = time::Instant::now()
+        //     + time::Duration::from_secs_f64(((1. / FPS) - delta_frame_time).max(0.));
+        while time::Instant::now()
+            .duration_since(last_frame)
+            .as_secs_f64()
+            <= 1. / FPS
+        {
+            thread::sleep(sleep_zero);
+        }
     }
 }
