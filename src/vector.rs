@@ -52,7 +52,7 @@ impl Vector2 {
 
     /// Calculates and returns magnitude
     pub fn get_magnitude(&self) -> f64 {
-        Vector2::calculate_magnitude(self.get_x(), self.get_y())
+        self.magnitude
     }
 
     pub fn get_components(&mut self) -> Components {
