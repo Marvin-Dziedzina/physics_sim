@@ -12,13 +12,12 @@ mod vector;
 
 const FPS: f64 = 25.;
 
-const PARTICLE_COUNT: u32 = 200;
+const PARTICLE_COUNT: u32 = 1200;
 const RADIUS: u32 = 5;
 const MASS: f64 = 1.;
 
 const REPULSIVENESS: f64 = 1.5;
 const REPULSE_RADIUS: u32 = 32;
-const ATTRACTION_RADIUS: u32 = 45;
 
 const MOUSE_RADIUS: f64 = 128.;
 const MOUSE_STRENGTH: f64 = 18.;
@@ -72,10 +71,6 @@ async fn main() {
                         strength * REPULSIVENESS * particles[i].mass * delta_frame_time,
                     );
                     particles[i].velocity.add(&repulse_vector);
-                }
-
-                if distance as u32 >= REPULSE_RADIUS && distance as u32 <= ATTRACTION_RADIUS {
-                    // inplement attraction force
                 }
             }
         }

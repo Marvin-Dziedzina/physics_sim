@@ -32,7 +32,7 @@ impl Particle {
 
     pub fn calculate(&mut self, delta_frame_time: &f64) {
         // movement
-        // self.gravity(delta_frame_time);
+        self.gravity(&delta_frame_time);
         self.drag(&delta_frame_time);
 
         // update
@@ -55,7 +55,7 @@ impl Particle {
         self.color = Color::from_rgba(r as u8, 0, b as u8, 255);
     }
 
-    fn gravity(&mut self, delta_frame_time: f64) {
+    fn gravity(&mut self, delta_frame_time: &f64) {
         self.velocity.add(&Vector2::from_components(
             0.,
             self.mass * GRAVITY * delta_frame_time,
