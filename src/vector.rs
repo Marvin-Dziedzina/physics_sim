@@ -78,10 +78,18 @@ impl Vector2 {
     /// This shortens the vector but keeps the direction the same.
     /// X and Y will be modified
     pub fn set_magnitude(&mut self, s: f64) {
+        if self.get_magnitude() == 0. {
+            return;
+        }
+
         self.multiply_scalar(s / self.get_magnitude());
     }
 
     pub fn set_magnitude_vector(&self, s: f64) -> Vector2 {
+        if self.get_magnitude() == 0. {
+            return self.multiply_scalar_vector(1.);
+        }
+
         self.multiply_scalar_vector(s / self.get_magnitude())
     }
 
