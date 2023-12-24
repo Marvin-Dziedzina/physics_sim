@@ -127,8 +127,6 @@ async fn main() {
         let fps: f64 = 1. / delta_frame_time;
         println!("FPS: {}", fps.round());
 
-        // let sleep_until = time::Instant::now()
-        //     + time::Duration::from_secs_f64(((1. / FPS) - delta_frame_time).max(0.));
         while time::Instant::now()
             .duration_since(last_frame)
             .as_secs_f64()
