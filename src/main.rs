@@ -14,8 +14,9 @@ const PARTICLE_COUNT: u32 = 200;
 const RADIUS: u32 = 15;
 const MASS: f64 = 1.;
 
-const REPULSIVENESS: f64 = 0.5;
-const REPULSE_RADIUS: u32 = 64;
+const REPULSIVENESS: f64 = 2.;
+const REPULSE_RADIUS: u32 = 32;
+const ATTRACTION_RADIUS: u32 = 45;
 
 #[macroquad::main("Particles")]
 async fn main() {
@@ -52,10 +53,27 @@ async fn main() {
         }
 
         println!("FPS: {}", fps);
-        
+
         // calculate
         for i in 0..particles.len() {
             particles[i].calculate();
+
+            for ii in 0..particles.len() {
+                if i == ii {
+                    continue;
+                }
+
+                let mut distance_vector = particles[ii]
+                    .position
+                    .get_distance_vector(&particles[i].position);
+                let distance = distance_vector.get_magnitude();
+                if distance as u32 <= REPULSE_RADIUS {
+                    let strength = (REPULSE_RADIUS as f64 - distance) / REPULSE_RADIUS as f64;
+                    distance_vector.reverse();
+                    distance_vector.set_magnitude(strength * REPULSIVENESS * particles[i].mass);
+                    particles[i].velocity.add(&distance_vector);
+                }
+            }
         }
 
         // fun input
