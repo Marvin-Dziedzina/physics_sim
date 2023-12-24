@@ -1,6 +1,6 @@
 use core::fmt;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Components {
     pub magnitude: f64,
     pub x: f64,
@@ -12,7 +12,7 @@ impl Components {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Vector2 {
     magnitude: f64,
     x: f64,
@@ -55,8 +55,13 @@ impl Vector2 {
         self.magnitude
     }
 
-    pub fn get_components(&mut self) -> Components {
+    pub fn get_components(&self) -> Components {
         Components::new(self.get_x(), self.get_y(), self.get_magnitude())
+    }
+
+    /// result: (x, y, magnitude)
+    pub fn get_components_tuple(&self) -> (f64, f64, f64) {
+        (self.get_x(), self.get_y(), self.get_magnitude())
     }
 
     // Set component
@@ -79,18 +84,19 @@ impl Vector2 {
     /// X and Y will be modified
     pub fn set_magnitude(&mut self, s: f64) {
         if self.get_magnitude() == 0. {
-            return;
+            self.add_scalar(1.);
         }
 
         self.multiply_scalar(s / self.get_magnitude());
     }
 
     pub fn set_magnitude_vector(&self, s: f64) -> Vector2 {
+        let mut v = self.clone();
         if self.get_magnitude() == 0. {
-            return self.multiply_scalar_vector(1.);
+            v = self.add_scalar_vector(1.);
         }
 
-        self.multiply_scalar_vector(s / self.get_magnitude())
+        v.multiply_scalar_vector(s / v.get_magnitude())
     }
 
     // Calculations
@@ -115,7 +121,7 @@ impl Vector2 {
     }
 
     pub fn subtract_scalar(&mut self, s: f64) {
-        self.set_components(self.get_x() + s, self.get_y() + s);
+        self.set_components(self.get_x() - s, self.get_y() - s);
     }
 
     pub fn subtract_vector(&self, v: &Vector2) -> Vector2 {
@@ -123,7 +129,7 @@ impl Vector2 {
     }
 
     pub fn subtract_scalar_vector(&self, s: f64) -> Vector2 {
-        Vector2::from_components(self.get_x() + s, self.get_y() + s)
+        Vector2::from_components(self.get_x() - s, self.get_y() - s)
     }
 
     pub fn multiply(&mut self, v: &Vector2) {
@@ -221,4 +227,168 @@ impl fmt::Display for Vector2 {
             self.get_magnitude(),
         )
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn vector_new() {
+        let v = Vector2::new();
+
+        assert_eq!((0., 0., 0.), (v.get_x(), v.get_y(), v.get_magnitude()))
+    }
+
+    #[test]
+    fn vector_from_components() {
+        let v = Vector2::from_components(2., 5.);
+
+        assert_eq!((2., 5., 5.385164807134504), v.get_components_tuple())
+    }
+
+    #[test]
+    fn get_x() {
+        let v = Vector2::from_components(5., 2.);
+
+        assert_eq!(5., v.get_x())
+    }
+
+    #[test]
+    fn get_y() {
+        let v = Vector2::from_components(5., 2.);
+
+        assert_eq!(2., v.get_y())
+    }
+
+    #[test]
+    fn get_magnitude() {
+        let v = Vector2::from_components(2., 5.);
+
+        assert_eq!(5.385164807134504, v.get_magnitude())
+    }
+
+    #[test]
+    fn get_components() {
+        let v = Vector2::from_components(2., 5.);
+
+        assert_eq!(
+            Components::new(2., 5., 5.385164807134504),
+            v.get_components()
+        )
+    }
+
+    #[test]
+    fn set_components() {
+        let mut v = Vector2::new();
+        v.set_components(1., 2.);
+
+        assert_eq!((1., 2.), (v.get_x(), v.get_y()))
+    }
+
+    #[test]
+    fn set_x() {
+        let mut v = Vector2::new();
+        v.set_x(5.);
+
+        assert_eq!(5., v.get_x())
+    }
+
+    #[test]
+    fn set_y() {
+        let mut v = Vector2::new();
+        v.set_y(2.);
+
+        assert_eq!(2., v.get_y())
+    }
+
+    #[test]
+    fn set_magnitude() {
+        let mut v = Vector2::new();
+        v.set_magnitude(4.);
+
+        assert_eq!(4., v.get_magnitude().ceil())
+    }
+
+    #[test]
+    fn set_magnitude_vector() {
+        let v = Vector2::new();
+        let v = v.set_magnitude_vector(4.);
+
+        assert_eq!(4., v.get_magnitude().ceil())
+    }
+
+    #[test]
+    fn add() {
+        let mut v = Vector2::new();
+        v.add(&Vector2::from_components(5., 6.));
+
+        assert_eq!((5., 6.), (v.get_x(), v.get_y()))
+    }
+
+    #[test]
+    fn add_scalar() {
+        let mut v = Vector2::new();
+        v.add_scalar(5.);
+
+        assert_eq!((5., 5.), (v.get_x(), v.get_y()))
+    }
+
+    #[test]
+    fn add_scalar_vector() {
+        let v = Vector2::new();
+        let v = v.add_scalar_vector(3.);
+
+        assert_eq!((3., 3.), (v.get_x(), v.get_y()))
+    }
+
+    #[test]
+    fn add_vector() {
+        let v = Vector2::new();
+        let v = v.add_vector(&Vector2::from_components(2., 5.));
+
+        assert_eq!((2., 5.), (v.get_x(), v.get_y()))
+    }
+
+    #[test]
+    fn subtract() {
+        let mut v = Vector2::new();
+        v.subtract(&Vector2::from_components(21., 5.));
+
+        assert_eq!((-21., -5.), (v.get_x(), v.get_y()))
+    }
+
+    #[test]
+    fn subtract_scalar() {
+        let mut v = Vector2::new();
+        v.subtract_scalar(3.);
+
+        assert_eq!((-3., -3.), (v.get_x(), v.get_y()))
+    }
+
+    #[test]
+    fn subtract_scalar_vector() {
+        let v = Vector2::new();
+        let v = v.subtract_scalar_vector(5.);
+
+        assert_eq!((-5., -5.), (v.get_x(), v.get_y()))
+    }
+
+    #[test]
+    fn subtract_vector() {
+        let v = Vector2::new();
+        let v = v.subtract_vector(&Vector2::from_components(2., 1.));
+
+        assert_eq!((-2., -1.), (v.get_x(), v.get_y()))
+    }
+
+    #[test]
+    fn multiply() {
+        let mut v = Vector2::from_components(5., 5.);
+        v.multiply(&Vector2::from_components(2., 2.));
+
+        assert_eq!((10., 10.), (v.get_x(), v.get_y()))
+    }
+
+    // add mor unit tests
 }
