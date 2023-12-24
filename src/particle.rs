@@ -34,6 +34,7 @@ impl Particle {
 
         // update
         self.update_position();
+        self.update_color();
 
         // check for rules
         self.check_boundaries();
@@ -41,6 +42,13 @@ impl Particle {
 
     fn update_position(&mut self) {
         self.position.add(&self.velocity);
+    }
+
+    fn update_color(&mut self) {
+        let speed = self.velocity.get_magnitude() / 15.;
+        let r = speed * 255.;
+        let b = (1. - speed) * 255.;
+        self.color = Color::from_rgba(r as u8, 0, b as u8, 255);
     }
 
     fn gravity(&mut self) {
@@ -99,7 +107,7 @@ impl Particle {
             (self.position.get_x() + self.velocity.get_x()) as f32,
             (self.position.get_y() + self.velocity.get_y()) as f32,
             2.,
-            Color::from_rgba(255, 0, 0, 180),
+            Color::from_rgba(0, 255, 0, 180),
         )
     }
 }
