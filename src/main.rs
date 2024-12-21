@@ -1,138 +1,152 @@
-use std::thread;
-use std::time;
+use bevy::{diagnostic::FrameTimeDiagnosticsPlugin, prelude::*};
 
-use ::rand;
-use macroquad::miniquad::window;
-use macroquad::prelude::*;
-use particle::Particle;
-use vector::Vector2;
+use rand::{self, Rng};
 
-mod particle;
-mod vector;
+const PARTICLE_COUNT: u32 = 5000;
 
-const FPS: f64 = 25.;
+const DRAG_MULTIPLIER: f32 = 0.9;
 
-const PARTICLE_COUNT: u32 = 1200;
-const RADIUS: u32 = 5;
-const MASS: f64 = 1.;
+const PARTICLE_RADIUS: f32 = 5.0;
+const PARTICLE_DIAMETER: f32 = PARTICLE_RADIUS * 2.0;
+const PARTICLE_DIAMETER_SQUARED: f32 = PARTICLE_DIAMETER * PARTICLE_DIAMETER;
+const MASS: f32 = 0.05;
+const BOUNCE_VELOCITY_MULTIPLIER: f32 = 0.6;
+const REPULSIVENESS: f32 = 0.49;
 
-const REPULSIVENESS: f64 = 1.5;
-const REPULSE_RADIUS: u32 = 32;
+const GRAVITY: f32 = 9.81;
 
-const MOUSE_RADIUS: f64 = 128.;
-const MOUSE_STRENGTH: f64 = 18.;
+fn main() -> AppExit {
+    App::new()
+        .add_plugins(DefaultPlugins)
+        // .add_plugins(FrameTimeDiagnosticsPlugin)
+        .add_systems(Startup, setup)
+        .add_systems(FixedUpdate, (apply_gravity, apply_drag, repulse_particles))
+        .add_systems(
+            FixedPostUpdate,
+            (
+                update_particle_position,
+                check_border_collision.after(update_particle_position),
+            ),
+        )
+        .run()
+}
 
-#[macroquad::main("Particles")]
-async fn main() {
-    let screen_size = window::screen_size();
+fn setup(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+    window: Single<&mut Window>,
+) {
+    commands.spawn(Camera2d);
 
-    let mut particles: Vec<Particle> = Vec::new();
+    let mut thread_rng = rand::thread_rng();
+
+    let window_size = window.size();
+
+    let circle = meshes.add(Circle::new(PARTICLE_RADIUS));
+    let color = materials.add(Color::linear_rgb(1.0, 1.0, 1.0));
+
+    let x_range = -(window_size.x / 2.0) + PARTICLE_RADIUS..(window_size.x / 2.0) - PARTICLE_RADIUS;
+    let y_range = -(window_size.y / 2.0) + PARTICLE_RADIUS..(window_size.y / 2.0) - PARTICLE_RADIUS;
+
     for _ in 0..PARTICLE_COUNT {
-        let x =
-            (rand::random::<f64>() * (screen_size.0 - (RADIUS * 2) as f32) as f64) + RADIUS as f64;
-        let y =
-            (rand::random::<f64>() * (screen_size.1 - (RADIUS * 2) as f32) as f64) + RADIUS as f64;
-
-        particles.push(Particle::new(
-            Vector2::from_components(x, y),
-            RADIUS,
-            MASS,
-            (255, 255, 255, 255),
+        commands.spawn((
+            Particle,
+            Transform::from_xyz(
+                thread_rng.gen_range(x_range.clone()),
+                thread_rng.gen_range(y_range.clone()),
+                0.0,
+            ),
+            Velocity(Vec2::new(0.0, 0.0)),
+            Mesh2d(circle.clone()),
+            MeshMaterial2d(color.clone()),
+            Mass(MASS),
         ));
     }
+}
 
-    let sleep_zero = time::Duration::from_secs(0);
-    let mut last_frame: time::Instant = time::Instant::now();
+fn check_border_collision(
+    window: Single<&mut Window>,
+    mut particles: Query<(&mut Transform, &mut Velocity), With<Particle>>,
+) {
+    let window_size = window.size();
+    let coordinate_window_size = Vec2::new(window_size.x / 2.0, window_size.y / 2.0);
 
-    loop {
-        let delta_frame_time = time::Instant::now()
-            .duration_since(last_frame)
-            .as_secs_f64();
+    for (mut particle_transform, mut particle_velocity) in particles.iter_mut() {
+        if particle_transform.translation.x - PARTICLE_RADIUS < -coordinate_window_size.x {
+            particle_transform.translation.x = (coordinate_window_size.x - PARTICLE_RADIUS) * -1.0;
 
-        last_frame = time::Instant::now();
+            particle_velocity.0.x = particle_velocity.0.x * BOUNCE_VELOCITY_MULTIPLIER * -1.0;
+        } else if particle_transform.translation.x + PARTICLE_RADIUS > coordinate_window_size.x {
+            particle_transform.translation.x = coordinate_window_size.x - PARTICLE_RADIUS;
 
-        // calculate
-        for i in 0..particles.len() {
-            particles[i].calculate(&delta_frame_time);
+            particle_velocity.0.x = particle_velocity.0.x * BOUNCE_VELOCITY_MULTIPLIER * -1.0;
+        };
 
-            for ii in 0..particles.len() {
-                if i == ii {
-                    continue;
-                }
+        if particle_transform.translation.y - PARTICLE_RADIUS < -coordinate_window_size.y {
+            particle_transform.translation.y = (coordinate_window_size.y - PARTICLE_RADIUS) * -1.0;
 
-                let distance_vector = particles[ii]
-                    .position
-                    .get_distance_vector(&particles[i].position);
-                let distance = distance_vector.get_magnitude();
-                if distance as u32 <= REPULSE_RADIUS {
-                    let strength = (REPULSE_RADIUS as f64 - distance) / REPULSE_RADIUS as f64;
-                    let mut repulse_vector = distance_vector.reverse_vector();
-                    repulse_vector.set_magnitude(
-                        strength * REPULSIVENESS * particles[i].mass * delta_frame_time,
-                    );
-                    particles[i].velocity.add(&repulse_vector);
-                }
-            }
-        }
+            particle_velocity.0.y = particle_velocity.0.y * BOUNCE_VELOCITY_MULTIPLIER * -1.0;
+        } else if particle_transform.translation.y + PARTICLE_RADIUS > coordinate_window_size.y {
+            particle_transform.translation.y = coordinate_window_size.y - PARTICLE_RADIUS;
 
-        // fun input
-        if is_mouse_button_down(MouseButton::Left) {
-            // slice
-            let mouse_pos = mouse_position();
-            for i in 0..particles.len() {
-                let mut distance_vector =
-                    particles[i]
-                        .position
-                        .get_distance_vector(&Vector2::from_components(
-                            mouse_pos.0 as f64,
-                            mouse_pos.1 as f64,
-                        ));
-                let distance = distance_vector.get_magnitude();
-                if distance <= MOUSE_RADIUS {
-                    let strength = (MOUSE_RADIUS - distance) / MOUSE_RADIUS;
-                    distance_vector.set_magnitude(strength * MOUSE_STRENGTH * delta_frame_time);
-                    particles[i].velocity.add(&distance_vector);
-                }
-            }
-        } else if is_mouse_button_down(MouseButton::Right) {
-            // pull
-            let mouse_pos = mouse_position();
-            for i in 0..particles.len() {
-                let mut distance_vector =
-                    particles[i]
-                        .position
-                        .get_distance_vector(&Vector2::from_components(
-                            mouse_pos.0 as f64,
-                            mouse_pos.1 as f64,
-                        ));
-                let distance = distance_vector.get_magnitude();
-                if distance <= MOUSE_RADIUS {
-                    let strength = (MOUSE_RADIUS - distance) / MOUSE_RADIUS;
-                    distance_vector.reverse();
-                    distance_vector.set_magnitude(strength * MOUSE_STRENGTH * delta_frame_time);
-                    particles[i].velocity.add(&distance_vector);
-                }
-            }
-        }
+            particle_velocity.0.y = particle_velocity.0.y * BOUNCE_VELOCITY_MULTIPLIER * -1.0;
+        };
+    }
+}
 
-        // draw
-        clear_background(BLACK);
+fn update_particle_position(mut particles: Query<(&mut Transform, &mut Velocity), With<Particle>>) {
+    for (mut particle_transform, particle_velocity) in particles.iter_mut() {
+        particle_transform.translation.x += particle_velocity.0.x;
+        particle_transform.translation.y += particle_velocity.0.y;
+    }
+}
 
-        for i in 0..particles.len() {
-            particles[i].draw();
-        }
+fn apply_gravity(mut particles: Query<(&mut Velocity, &Mass), With<Particle>>) {
+    for (mut velocity, mass) in particles.iter_mut() {
+        velocity.0.y -= GRAVITY * mass.0;
+    }
+}
 
-        next_frame().await;
+fn apply_drag(mut particles: Query<&mut Velocity, With<Particle>>) {
+    for mut velocity in particles.iter_mut() {
+        velocity.0.x *= DRAG_MULTIPLIER;
+        velocity.0.y *= DRAG_MULTIPLIER;
+    }
+}
 
-        let fps: f64 = 1. / delta_frame_time;
-        println!("FPS: {}", fps.round());
+fn repulse_particles(
+    mut query_1: Query<(&Transform, &mut Velocity), With<Particle>>,
+    query_2: Query<&Transform, With<Particle>>,
+) {
+    for (i_1, (particle_1_transform, mut particle_1_velocity)) in query_1.iter_mut().enumerate() {
+        for (i_2, particle_2_transform) in query_2.iter().enumerate() {
+            if i_1 == i_2 {
+                continue;
+            };
 
-        while time::Instant::now()
-            .duration_since(last_frame)
-            .as_secs_f64()
-            <= 1. / FPS
-        {
-            thread::sleep(sleep_zero);
+            let direction = particle_1_transform.translation - particle_2_transform.translation;
+            let distance_squared = direction.length_squared();
+
+            if distance_squared > PARTICLE_DIAMETER_SQUARED {
+                continue;
+            };
+
+            let distance = distance_squared.sqrt().max(0.00001);
+            let normalized_direction = direction / distance;
+            particle_1_velocity.0 = particle_1_velocity.0
+                + Vec2::new(normalized_direction.x, normalized_direction.y)
+                    * (PARTICLE_DIAMETER - distance)
+                    * REPULSIVENESS;
         }
     }
 }
+
+#[derive(Debug, Component)]
+struct Particle;
+
+#[derive(Debug, Component)]
+struct Velocity(Vec2);
+
+#[derive(Debug, Component)]
+struct Mass(f32);
