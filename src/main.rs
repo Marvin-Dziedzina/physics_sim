@@ -1,8 +1,8 @@
-use bevy::{diagnostic::FrameTimeDiagnosticsPlugin, prelude::*};
+use bevy::prelude::*;
 
 use rand::{self, Rng};
 
-const PARTICLE_COUNT: u32 = 5000;
+const PARTICLE_COUNT: u32 = 1000;
 
 const DRAG_MULTIPLIER: f32 = 0.9;
 
@@ -18,7 +18,6 @@ const GRAVITY: f32 = 9.81;
 fn main() -> AppExit {
     App::new()
         .add_plugins(DefaultPlugins)
-        // .add_plugins(FrameTimeDiagnosticsPlugin)
         .add_systems(Startup, setup)
         .add_systems(FixedUpdate, (apply_gravity, apply_drag, repulse_particles))
         .add_systems(
@@ -119,27 +118,25 @@ fn repulse_particles(
     mut query_1: Query<(&Transform, &mut Velocity), With<Particle>>,
     query_2: Query<&Transform, With<Particle>>,
 ) {
-    for (i_1, (particle_1_transform, mut particle_1_velocity)) in query_1.iter_mut().enumerate() {
-        for (i_2, particle_2_transform) in query_2.iter().enumerate() {
-            if i_1 == i_2 {
-                continue;
-            };
+    query_1
+        .par_iter_mut()
+        .for_each(|(particle_1_transform, mut particle_1_velocity)| {
+            for particle_2_transform in query_2.iter() {
+                let direction = particle_1_transform.translation - particle_2_transform.translation;
+                let distance_squared = direction.length_squared();
 
-            let direction = particle_1_transform.translation - particle_2_transform.translation;
-            let distance_squared = direction.length_squared();
+                if distance_squared > PARTICLE_DIAMETER_SQUARED {
+                    continue;
+                };
 
-            if distance_squared > PARTICLE_DIAMETER_SQUARED {
-                continue;
-            };
-
-            let distance = distance_squared.sqrt().max(0.00001);
-            let normalized_direction = direction / distance;
-            particle_1_velocity.0 = particle_1_velocity.0
-                + Vec2::new(normalized_direction.x, normalized_direction.y)
-                    * (PARTICLE_DIAMETER - distance)
-                    * REPULSIVENESS;
-        }
-    }
+                let distance = distance_squared.sqrt().max(0.0000001);
+                let normalized_direction = direction / distance;
+                particle_1_velocity.0 = particle_1_velocity.0
+                    + Vec2::new(normalized_direction.x, normalized_direction.y)
+                        * (PARTICLE_DIAMETER - distance)
+                        * REPULSIVENESS;
+            }
+        });
 }
 
 #[derive(Debug, Component)]
