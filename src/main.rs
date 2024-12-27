@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use rand::{self, Rng};
 
-const PARTICLE_COUNT: u32 = 1000;
+const PARTICLE_COUNT: u32 = 10000;
 
 const DRAG_MULTIPLIER: f32 = 0.9;
 
@@ -14,6 +14,15 @@ const BOUNCE_VELOCITY_MULTIPLIER: f32 = 0.6;
 const REPULSIVENESS: f32 = 0.49;
 
 const GRAVITY: f32 = 9.81;
+
+#[derive(Debug, Component)]
+struct Particle;
+
+#[derive(Debug, Component)]
+struct Velocity(Vec2);
+
+#[derive(Debug, Component)]
+struct Mass(f32);
 
 fn main() -> AppExit {
     App::new()
@@ -138,12 +147,3 @@ fn repulse_particles(
             }
         });
 }
-
-#[derive(Debug, Component)]
-struct Particle;
-
-#[derive(Debug, Component)]
-struct Velocity(Vec2);
-
-#[derive(Debug, Component)]
-struct Mass(f32);
