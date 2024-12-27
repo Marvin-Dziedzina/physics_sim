@@ -104,10 +104,12 @@ fn check_border_collision(
 }
 
 fn update_particle_position(mut particles: Query<(&mut Transform, &mut Velocity), With<Particle>>) {
-    for (mut particle_transform, particle_velocity) in particles.iter_mut() {
-        particle_transform.translation.x += particle_velocity.0.x;
-        particle_transform.translation.y += particle_velocity.0.y;
-    }
+    particles
+        .par_iter_mut()
+        .for_each(|(mut particle_transform, particle_velocity)| {
+            particle_transform.translation.x += particle_velocity.0.x;
+            particle_transform.translation.y += particle_velocity.0.y;
+        });
 }
 
 fn apply_gravity(mut particles: Query<(&mut Velocity, &Mass), With<Particle>>) {
