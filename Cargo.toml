@@ -1,15 +1,15 @@
 [package]
 name = "physics_sim"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 
 [dependencies]
-bevy = { version = "0.15.0", features = ["trace"] }
-log = { version = "*", features = [
+bevy = { version = "0.16.1", features = ["trace"] }
+log = { version = "0.4.27", features = [
     "max_level_debug",
     "release_max_level_warn",
 ] }
-rand = "0.8.5"
+rand = "0.9.1"
 
 
 # Enable a small amount of optimization in the dev profile.
@@ -28,13 +28,3 @@ codegen-units = 1
 # Do a second optimization pass over the entire program, including dependencies.
 # Slows compile times, marginal improvements.
 lto = "thin"
-
-# Optimize for size in the wasm-release profile to reduce load times and bandwidth usage on web.
-[profile.wasm-release]
-# Default to release profile values.
-inherits = "release"
-# Optimize with size in mind (also try "z", sometimes it is better).
-# Slightly slows compile times, great improvements to file size and runtime performance.
-opt-level = "s"
-# Strip all debugging information from the binary to slightly reduce file size.
-strip = "debuginfo"

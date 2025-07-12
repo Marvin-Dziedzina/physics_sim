@@ -47,7 +47,7 @@ fn setup(
 ) {
     commands.spawn(Camera2d);
 
-    let mut thread_rng = rand::thread_rng();
+    let mut thread_rng = rand::rng();
 
     let window_size = window.size();
 
@@ -61,8 +61,8 @@ fn setup(
         commands.spawn((
             Particle,
             Transform::from_xyz(
-                thread_rng.gen_range(x_range.clone()),
-                thread_rng.gen_range(y_range.clone()),
+                thread_rng.random_range(x_range.clone()),
+                thread_rng.random_range(y_range.clone()),
                 0.0,
             ),
             Velocity(Vec2::new(0.0, 0.0)),
