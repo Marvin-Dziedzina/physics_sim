@@ -103,12 +103,15 @@ fn check_border_collision(
     }
 }
 
-fn update_particle_position(mut particles: Query<(&mut Transform, &mut Velocity), With<Particle>>) {
+fn update_particle_position(
+    time: Res<Time>,
+    mut particles: Query<(&mut Transform, &mut Velocity), With<Particle>>,
+) {
     particles
         .par_iter_mut()
         .for_each(|(mut particle_transform, particle_velocity)| {
-            particle_transform.translation.x += particle_velocity.0.x;
-            particle_transform.translation.y += particle_velocity.0.y;
+            particle_transform.translation.x += particle_velocity.0.x * time.delta_secs();
+            particle_transform.translation.y += particle_velocity.0.y * time.delta_secs();
         });
 }
 
